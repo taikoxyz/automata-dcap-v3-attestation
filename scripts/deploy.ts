@@ -52,7 +52,7 @@ function parseTcbInfo(): TCBInfoStruct.TCBInfoStruct {
   const fileContent = fs.readFileSync('contracts/assets/tcbInfo.json', 'utf8');
   const obj = JSON.parse(fileContent);
   var tcbInfo = obj.tcbInfo as TCBInfoStruct.TCBInfoStruct;
-  const fmspc = obj.tcbInfo.fmspc;;
+  const fmspc = obj.tcbInfo.fmspc;
   tcbInfo.pceid = tcbInfo.pceId;
   for (var i in tcbInfo.tcbLevels) {
     var tcb = tcbInfo.tcbLevels[i];

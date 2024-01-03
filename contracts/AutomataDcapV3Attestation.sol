@@ -16,6 +16,8 @@ import {BytesUtils} from "./utils/BytesUtils.sol";
 // External Libraries
 import {ISigVerifyLib} from "./interfaces/ISigVerifyLib.sol";
 
+import "hardhat/console.sol";
+
 contract AutomataDcapV3Attestation is IAttestation {
     using BytesUtils for bytes;
 
@@ -59,11 +61,11 @@ contract AutomataDcapV3Attestation is IAttestation {
         _;
     }
 
-    function setMrSigner(bytes32 _mrSigner, bool _trusted) onlyOwner public  {
+    function setMrSigner(bytes32 _mrSigner, bool _trusted) public onlyOwner {
         trustedUserMrSigner[_mrSigner] = _trusted;
     }
 
-    function setMrEnclave(bytes32 _mrEnclave, bool _trusted) onlyOwner public  {
+    function setMrEnclave(bytes32 _mrEnclave, bool _trusted) public onlyOwner {
         trustedUserMrEnclave[_mrEnclave] = _trusted;
     }
 
@@ -97,11 +99,12 @@ contract AutomataDcapV3Attestation is IAttestation {
     ) public onlyOwner {
         // 2.2M gas
         tcbInfo[fmspc] = tcbInfoInput;
+        // console.log("configureTcbInfoJson[%s]", fmspc);
     }
 
     function configureQeIdentityJson(
         EnclaveIdStruct.EnclaveId calldata qeIdentityInput
-    ) onlyOwner public {
+    ) public onlyOwner {
         // 250k gas
         qeIdentity = qeIdentityInput;
     }
@@ -135,9 +138,10 @@ contract AutomataDcapV3Attestation is IAttestation {
     /// @dev exitCode is defined in the {{ TCBInfoStruct.TCBStatus }} enum
     function _verify(
         bytes calldata quote
-    ) view public returns (bool, bytes memory) {
+    ) public view returns (bool, bytes memory) {
         bytes memory retData = abi.encodePacked(INVALID_EXIT_CODE);
 
+        // console.log("// Step 1: Parse the quote input = 152k gas");
         // Step 1: Parse the quote input = 152k gas
         (
             bool successful,
@@ -150,6 +154,9 @@ contract AutomataDcapV3Attestation is IAttestation {
             return (false, retData);
         }
 
+        // console.log(
+        //     "// Step 2: Verify application enclave report MRENCLAVE and MRSIGNER"
+        // );
         // Step 2: Verify application enclave report MRENCLAVE and MRSIGNER
         {
             if (checkLocalEnclaveReport) {
@@ -167,6 +174,7 @@ contract AutomataDcapV3Attestation is IAttestation {
             }
         }
 
+        // console.log("// Step 3: Verify enclave identity = 43k gas");
         // Step 3: Verify enclave identity = 43k gas
         V3Struct.EnclaveReport memory qeEnclaveReport;
         EnclaveIdStruct.EnclaveIdStatus qeTcbStatus;
@@ -193,6 +201,7 @@ contract AutomataDcapV3Attestation is IAttestation {
             }
         }
 
+        // console.log("// Step 4: Parse Quote CertChain");
         // Step 4: Parse Quote CertChain
         IPEMCertChainLib.ECSha256Certificate[] memory parsedQuoteCerts;
         TCBInfoStruct.TCBInfo memory fetchedTcbInfo;
@@ -223,6 +232,7 @@ contract AutomataDcapV3Attestation is IAttestation {
             }
         }
 
+        // console.log("// Step 5: basic PCK and TCB check = 381k gas");
         // Step 5: basic PCK and TCB check = 381k gas
         {
             string memory parsedFmspc = parsedQuoteCerts[0]
@@ -230,6 +240,13 @@ contract AutomataDcapV3Attestation is IAttestation {
                 .sgxExtension
                 .fmspc;
             fetchedTcbInfo = tcbInfo[parsedFmspc];
+            // console.log(
+            //     "// Step 5.1: parsedFmspc=%s, fetchedTcbInfo=(%s, %s)",
+            //     parsedFmspc,
+            //     fetchedTcbInfo.pceid,
+            //     fetchedTcbInfo.fmspc
+            // );
+
             bool tcbConfigured = LibString.eq(
                 parsedFmspc,
                 fetchedTcbInfo.fmspc
@@ -237,6 +254,7 @@ contract AutomataDcapV3Attestation is IAttestation {
             if (!tcbConfigured) {
                 return (false, retData);
             }
+            // console.log("// Step 5.5: tcbConfigured=%s", tcbConfigured);
 
             IPEMCertChainLib.ECSha256Certificate
                 memory pckCert = parsedQuoteCerts[0];
@@ -249,6 +267,7 @@ contract AutomataDcapV3Attestation is IAttestation {
             }
         }
 
+        // console.log("// Step 6: Verify TCB Level");
         // Step 6: Verify TCB Level
         TCBInfoStruct.TCBStatus tcbStatus;
         {
@@ -263,6 +282,7 @@ contract AutomataDcapV3Attestation is IAttestation {
             }
         }
 
+        // console.log("// Step 7: Verify cert chain for PCK");
         // Step 7: Verify cert chain for PCK
         {
             // 2.7M gas (rootCA pubkey is trusted)
@@ -272,6 +292,9 @@ contract AutomataDcapV3Attestation is IAttestation {
             }
         }
 
+        // console.log(
+        //     "// Step 8: Verify the local attestation sig and qe report sig = 2.8M gas"
+        // );
         // Step 8: Verify the local attestation sig and qe report sig = 2.8M gas
         {
             bool enclaveReportSigsVerified = _enclaveReportSigVerification(
@@ -286,18 +309,19 @@ contract AutomataDcapV3Attestation is IAttestation {
         }
 
         retData = abi.encodePacked(sha256(quote), tcbStatus);
-
+        // console.logBytes(retData);
+        // console.log("tcbStatus=%s", uint(tcbStatus));
         return (_attestationTcbIsValid(tcbStatus), retData);
     }
 
     function _verifyQEReportWithIdentity(
         V3Struct.EnclaveReport memory quoteEnclaveReport
-    ) view private returns (bool, EnclaveIdStruct.EnclaveIdStatus status) {
+    ) private view returns (bool, EnclaveIdStruct.EnclaveIdStatus status) {
         EnclaveIdStruct.EnclaveId memory enclaveId = qeIdentity;
         bool miscselectMatched = quoteEnclaveReport.miscSelect &
             enclaveId.miscselectMask ==
             enclaveId.miscselect;
-        
+
         bool attributesMatched = quoteEnclaveReport.attributes &
             enclaveId.attributesMask ==
             enclaveId.attributes;
@@ -454,7 +478,7 @@ contract AutomataDcapV3Attestation is IAttestation {
         } else return false;
     }
 
-    function verifyAttestation(bytes calldata data) view public returns (bool) {
+    function verifyAttestation(bytes calldata data) public returns (bool) {
         (bool success, ) = _verify(data);
         return success;
     }
