@@ -10,7 +10,7 @@ library TCBInfoStruct {
 
     struct TCBLevelObj {
         uint256 pcesvn;
-        uint256[] sgxTcbCompSvnArr;
+        uint8[] sgxTcbCompSvnArr;
         TCBStatus status;
     }
 

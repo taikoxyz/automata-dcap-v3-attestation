@@ -16,6 +16,9 @@ import {BytesUtils} from "./utils/BytesUtils.sol";
 // External Libraries
 import {ISigVerifyLib} from "./interfaces/ISigVerifyLib.sol";
 
+import "hardhat/console.sol";
+
+
 contract AutomataDcapV3Attestation is IAttestation {
     using BytesUtils for bytes;
 
@@ -106,7 +109,7 @@ contract AutomataDcapV3Attestation is IAttestation {
             || status == TCBInfoStruct.TCBStatus.TCB_CONFIGURATION_AND_SW_HARDENING_NEEDED;
     }
 
-    function verifyAttestation(bytes calldata data) external view override returns (bool) {
+    function verifyAttestation(bytes calldata data) external override returns (bool) {
         (bool success,) = _verify(data);
         return success;
     }
@@ -290,7 +293,7 @@ contract AutomataDcapV3Attestation is IAttestation {
         return (true, TCBInfoStruct.TCBStatus.TCB_UNRECOGNIZED);
     }
 
-    function _isCpuSvnHigherOrGreater(uint256[] memory pckCpuSvns, uint256[] memory tcbCpuSvns)
+    function _isCpuSvnHigherOrGreater(uint256[] memory pckCpuSvns, uint8[] memory tcbCpuSvns)
         private
         pure
         returns (bool)

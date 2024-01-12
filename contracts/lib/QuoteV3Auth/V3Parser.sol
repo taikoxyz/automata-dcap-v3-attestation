@@ -4,6 +4,8 @@ pragma solidity ^0.8.0;
 import {BytesUtils} from "../../utils/BytesUtils.sol";
 import {V3Struct} from "./V3Struct.sol";
 
+import "hardhat/console.sol";
+
 library V3Parser {
     using BytesUtils for bytes;
 
