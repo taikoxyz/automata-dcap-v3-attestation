@@ -491,25 +491,9 @@ contract AutomataDcapV3Attestation is IAttestation {
 
         bool qeReportDataIsValid = expectedAuthDataHash == computedAuthDataHash;
         if (qeReportDataIsValid) {
-            uint16 isvProdIdPackBE = (authDataV3.pckSignedQeReport.isvProdId >>
-                8) | (authDataV3.pckSignedQeReport.isvProdId << 8);
-            uint16 isvSvnPackBE = (authDataV3.pckSignedQeReport.isvSvn >> 8) |
-                (authDataV3.pckSignedQeReport.isvSvn << 8);
+            bytes memory pckSignedQeReportBytes = V3Parser.packQEReport(authDataV3.pckSignedQeReport);
             bool qeSigVerified = sigVerifyLib.verifyES256Signature(
-                abi.encodePacked(
-                    authDataV3.pckSignedQeReport.cpuSvn,
-                    authDataV3.pckSignedQeReport.miscSelect,
-                    authDataV3.pckSignedQeReport.reserved1,
-                    authDataV3.pckSignedQeReport.attributes,
-                    authDataV3.pckSignedQeReport.mrEnclave,
-                    authDataV3.pckSignedQeReport.reserved2,
-                    authDataV3.pckSignedQeReport.mrSigner,
-                    authDataV3.pckSignedQeReport.reserved3,
-                    isvProdIdPackBE,
-                    isvSvnPackBE,
-                    authDataV3.pckSignedQeReport.reserved4,
-                    authDataV3.pckSignedQeReport.reportData
-                ),
+                pckSignedQeReportBytes,
                 authDataV3.qeReportSignature,
                 pckCertPubKey
             );
@@ -541,65 +525,29 @@ contract AutomataDcapV3Attestation is IAttestation {
     /// matching TCBInfo and this is defined in the _attestationTcbIsValid() method, which can be overwritten
     /// in derived contracts. (Except for "Revoked" status, which also returns (false, INVALID_EXIT_CODE) value)
     /// @dev For all valid quote verification, returns the following data:
-    /// (_attestationTcbIsValid(), abi.encodePacked(sha256(quote), uint8 exitCode))
+    /// (_attestationTcbIsValid())
     /// @dev exitCode is defined in the {{ TCBInfoStruct.TCBStatus }} enum
     function verifyParsedQuote(
         V3Struct.ParsedV3QuoteStruct calldata v3quote
-    ) external returns (bool, bytes memory) {
-        bytes memory retData = abi.encodePacked(INVALID_EXIT_CODE);
+    ) external returns (bool success, uint8 exitStep) {
+        success = false;
+        exitStep = 1;
 
         // // Step 1: Parse the quote input = 152k gas
-        // (
-        //     bool successful,
-        //     ,
-        //     V3Struct.EnclaveReport memory localEnclaveReport,
-        //     bytes memory signedQuoteData,
-        //     V3Struct.ECDSAQuoteV3AuthData memory authDataV3
-        // ) = V3Parser.parseInput(quote);
-        // if (!successful) {
-        //     return (false, retData);
-        // }
-
         console.log("Step 1: Parse the quote input = 152k gas");
         // todo: validate(v3quote)
-        V3Parser.validateParsedInput(v3quote);
-        V3Struct.Header memory header = v3quote.header;
-        bytes memory headerBytes = abi.encodePacked(
-            header.version,
-            header.attestationKeyType,
-            header.teeType,
-            header.qeSvn,
-            header.pceSvn,
-            header.qeVendorId,
-            header.userData
-        );
-        V3Struct.EnclaveReport memory localEnclaveReport = v3quote
-            .localEnclaveReport;
-        uint16 isvProdIdPackBE = (localEnclaveReport.isvProdId >> 8) |
-            (localEnclaveReport.isvProdId << 8);
-        uint16 isvSvnPackBE = (localEnclaveReport.isvSvn >> 8) |
-            (localEnclaveReport.isvSvn << 8);
-        bytes memory localQEReportBytes = abi.encodePacked(
-            localEnclaveReport.cpuSvn,
-            localEnclaveReport.miscSelect,
-            localEnclaveReport.reserved1,
-            localEnclaveReport.attributes,
-            localEnclaveReport.mrEnclave,
-            localEnclaveReport.reserved2,
-            localEnclaveReport.mrSigner,
-            localEnclaveReport.reserved3,
-            isvProdIdPackBE,
-            isvSvnPackBE,
-            localEnclaveReport.reserved4,
-            localEnclaveReport.reportData
-        );
-        bytes memory signedQuoteData = abi.encodePacked(
-            headerBytes,
-            localQEReportBytes
-        );
-        V3Struct.ParsedECDSAQuoteV3AuthData memory authDataV3 = v3quote
-            .v3AuthData;
+        (
+            bool successful,
+            ,
+            ,
+            bytes memory signedQuoteData,
+            V3Struct.ParsedECDSAQuoteV3AuthData memory authDataV3
+        ) = V3Parser.validateParsedInput(v3quote);
+        if (!successful) {
+            return (false, exitStep);
+        }
 
+        exitStep += 1;
         // Step 2: Verify application enclave report MRENCLAVE and MRSIGNER
         console.log(
             "Step 2: Verify application enclave report MRENCLAVE and MRSIGNER"
@@ -615,18 +563,16 @@ contract AutomataDcapV3Attestation is IAttestation {
                 ];
 
                 if (!mrEnclaveIsTrusted || !mrSignerIsTrusted) {
-                    return (false, retData);
+                    return (false, exitStep);
                 }
             }
         }
 
+        exitStep += 1;
         console.log("Step 3: Verify enclave identity = 43k gas");
         // Step 3: Verify enclave identity = 43k gas
-        // V3Struct.EnclaveReport memory qeEnclaveReport;
         EnclaveIdStruct.EnclaveIdStatus qeTcbStatus;
         {
-            // qeEnclaveReport = V3Parser.parseEnclaveReport(authDataV3.rawQeReport);
-            // qeEnclaveReport = v3quote.v3AuthData.pckSignedQeReport;
             bool verifiedEnclaveIdSuccessfully;
             (
                 verifiedEnclaveIdSuccessfully,
@@ -635,7 +581,7 @@ contract AutomataDcapV3Attestation is IAttestation {
                 v3quote.v3AuthData.pckSignedQeReport
             );
             if (!verifiedEnclaveIdSuccessfully) {
-                return (false, retData);
+                return (false, exitStep);
             }
             if (
                 !verifiedEnclaveIdSuccessfully ||
@@ -644,47 +590,36 @@ contract AutomataDcapV3Attestation is IAttestation {
                     .EnclaveIdStatus
                     .SGX_ENCLAVE_REPORT_ISVSVN_REVOKED
             ) {
-                return (false, retData);
+                return (false, exitStep);
             }
         }
 
+        exitStep += 1;
         console.log("Step 4: Parse Quote CertChain");
         // Step 4: Parse Quote CertChain
         IPEMCertChainLib.ECSha256Certificate[] memory parsedQuoteCerts;
         TCBInfoStruct.TCBInfo memory fetchedTcbInfo;
         {
-            // 660k gas
-            // (bool certParsedSuccessfully, bytes[] memory quoteCerts) =
-            //     pemCertLib.splitCertificateChain(authDataV3.certification.certData, 3);
-            // if (!certParsedSuccessfully) {
-            //     return (false, retData);
-            // }
-            // todo! verify quote data size
-            require(
-                authDataV3.certification.decodedCertDataArray.length == 3,
-                "3 certs in chain"
-            );
-            // bytes[] memory quoteCerts = authDataV3.certification.certArray;
-
-            console.log("Step 4.5: Parse Quote parsedQuoteCerts");
             // 536k gas
             parsedQuoteCerts = new IPEMCertChainLib.ECSha256Certificate[](3);
             for (uint256 i = 0; i < 3; i++) {
-                console.log("Step 4.5.%s: Parse Quote parsedQuoteCerts", i);
+                console.log("Step 4.%s: Parse Quote parsedQuoteCerts", i);
                 // quoteCerts[i] = Base64.decode(string(authDataV3.certification.certArray[i]));
                 bool isPckCert = i == 0; // additional parsing for PCKCert
                 bool certDecodedSuccessfully;
+                // todo! move decodeCert offchain
                 (certDecodedSuccessfully, parsedQuoteCerts[i]) = pemCertLib
                     .decodeCert(
                         authDataV3.certification.decodedCertDataArray[i],
                         isPckCert
                     );
                 if (!certDecodedSuccessfully) {
-                    return (false, retData);
+                    return (false, exitStep);
                 }
             }
         }
 
+        exitStep += 1;
         console.log("Step 5: basic PCK and TCB check = 381k gas");
         // Step 5: basic PCK and TCB check = 381k gas
         {
@@ -698,7 +633,7 @@ contract AutomataDcapV3Attestation is IAttestation {
                 fetchedTcbInfo.fmspc
             );
             if (!tcbConfigured) {
-                return (false, retData);
+                return (false, exitStep);
             }
 
             IPEMCertChainLib.ECSha256Certificate
@@ -708,10 +643,11 @@ contract AutomataDcapV3Attestation is IAttestation {
                 fetchedTcbInfo.pceid
             );
             if (!pceidMatched) {
-                return (false, retData);
+                return (false, exitStep);
             }
         }
 
+        exitStep += 1;
         console.log("Step 6: Verify TCB Level");
         // Step 6: Verify TCB Level
         TCBInfoStruct.TCBStatus tcbStatus;
@@ -723,20 +659,22 @@ contract AutomataDcapV3Attestation is IAttestation {
                 fetchedTcbInfo
             );
             if (!tcbVerified) {
-                return (false, retData);
+                return (false, exitStep);
             }
         }
 
+        exitStep += 1;
         console.log("Step 7: Verify cert chain for PCK");
         // Step 7: Verify cert chain for PCK
         {
             // 660k gas (rootCA pubkey is trusted)
             bool pckCertChainVerified = _verifyCertChain(parsedQuoteCerts);
             if (!pckCertChainVerified) {
-                return (false, retData);
+                return (false, exitStep);
             }
         }
 
+        exitStep += 1;
         console.log(
             "Step 8: Verify the local attestation sig and qe report sig = 670k gas"
         );
@@ -749,7 +687,7 @@ contract AutomataDcapV3Attestation is IAttestation {
                     v3quote.v3AuthData.pckSignedQeReport
                 );
             if (!enclaveReportSigsVerified) {
-                return (false, retData);
+                return (false, exitStep);
             }
         }
 
@@ -757,8 +695,8 @@ contract AutomataDcapV3Attestation is IAttestation {
         //     sha256(abi.encodePacked(v3quote)),
         //     tcbStatus
         // );
-        retData = abi.encodePacked(tcbStatus);
-        console.log("Step 9: emit retData");
-        return (_attestationTcbIsValid(tcbStatus), retData);
+        exitStep += 1;
+        success = _attestationTcbIsValid(tcbStatus);
+        console.log("Step 9: return success = %s, tcbStatus = %s", success, uint256(tcbStatus));
     }
 }

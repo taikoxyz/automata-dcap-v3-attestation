@@ -96,9 +96,19 @@ library V3Parser {
 
     function validateParsedInput(
         V3Struct.ParsedV3QuoteStruct calldata v3Quote
-    ) internal pure returns (bool success) {
-        V3Struct.EnclaveReport memory localEnclaveReport = v3Quote
-            .localEnclaveReport;
+    )
+        internal
+        pure
+        returns (
+            bool success,
+            V3Struct.Header memory header,
+            V3Struct.EnclaveReport memory localEnclaveReport,
+            bytes memory signedQuoteData, // concatenation of header and local enclave report bytes
+            V3Struct.ParsedECDSAQuoteV3AuthData memory authDataV3
+        )
+    {
+        success = true;
+        localEnclaveReport = v3Quote.localEnclaveReport;
         V3Struct.EnclaveReport memory pckSignedQeReport = v3Quote
             .v3AuthData
             .pckSignedQeReport;
@@ -134,25 +144,29 @@ library V3Parser {
                 v3Quote.v3AuthData.qeAuthData.data.length,
             "Invalid QEAuthData size"
         );
-        // todo! certDataSize = len(join((BEGIN_CERT, certArray[i], END_CERT) for i in 0..3))
+
+        // todo!
+        // v3Quote.v3AuthData.certification.certDataSize ==
+        //      len(join((BEGIN_CERT, base64.encode(certArray[i]), END_CERT) for i in 0..3))
         // This check need b64 encoding, skip it now.
         // require(
-        //     v3Quote.v3AuthData.certification.decodedCertDataArray[0].length +
-        //         v3Quote
+        //     base64.encode(v3Quote.v3AuthData.certification.decodedCertDataArray[0]).length +
+        //          base64.encode(v3Quote
         //             .v3AuthData
         //             .certification
-        //             .decodedCertDataArray[1]
+        //             .decodedCertDataArray[1])
         //             .length +
-        //         v3Quote
+        //          base64.encode(v3Quote
         //             .v3AuthData
         //             .certification
-        //             .decodedCertDataArray[2]
+        //             .decodedCertDataArray[2])
         //             .length +
         //         3 *
         //         (HEADER_LENGTH + FOOTER_LENGTH) ==
         //         v3Quote.v3AuthData.certification.certDataSize,
         //     "Invalid certData size"
         // );
+
         uint32 totalQuoteSize = 48 + // header
             384 + // local QE report
             64 + // ecdsa256BitSignature
@@ -162,7 +176,23 @@ library V3Parser {
             v3Quote.v3AuthData.qeAuthData.parsedDataSize +
             v3Quote.v3AuthData.certification.certDataSize;
         require(totalQuoteSize >= MINIMUM_QUOTE_LENGTH, "Invalid quote size");
-        return true;
+
+        header = v3Quote.header;
+        bytes memory headerBytes = abi.encodePacked(
+            header.version,
+            header.attestationKeyType,
+            header.teeType,
+            header.qeSvn,
+            header.pceSvn,
+            header.qeVendorId,
+            header.userData
+        );
+
+        signedQuoteData = abi.encodePacked(
+            headerBytes,
+            V3Parser.packQEReport(localEnclaveReport)
+        );
+        authDataV3 = v3Quote.v3AuthData;
     }
 
     function parseEnclaveReport(
@@ -272,5 +302,34 @@ library V3Parser {
         authDataV3.certification = cert;
 
         success = true;
+    }
+
+    /// enclaveReport to bytes for hash calculation.
+    /// the only difference between enclaveReport and packedQEReport is the
+    /// order of isvProdId and isvSvn. enclaveReport is in little endian, while
+    /// in bytes should be in big endian according to Intel spec.
+    /// @param enclaveReport enclave report
+    /// @return packedQEReport enclave report in bytes
+    function packQEReport(
+        V3Struct.EnclaveReport memory enclaveReport
+    ) internal pure returns (bytes memory packedQEReport) {
+        uint16 isvProdIdPackBE = (enclaveReport.isvProdId >> 8) |
+            (enclaveReport.isvProdId << 8);
+        uint16 isvSvnPackBE = (enclaveReport.isvSvn >> 8) |
+            (enclaveReport.isvSvn << 8);
+        packedQEReport = abi.encodePacked(
+            enclaveReport.cpuSvn,
+            enclaveReport.miscSelect,
+            enclaveReport.reserved1,
+            enclaveReport.attributes,
+            enclaveReport.mrEnclave,
+            enclaveReport.reserved2,
+            enclaveReport.mrSigner,
+            enclaveReport.reserved3,
+            isvProdIdPackBE,
+            isvSvnPackBE,
+            enclaveReport.reserved4,
+            enclaveReport.reportData
+        );
     }
 }
