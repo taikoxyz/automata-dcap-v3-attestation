@@ -19,17 +19,17 @@ describe("Deployment Test", function () {
     }
 
     this.beforeAll(async function () {
-        const sigVerifyLib = await ethers.deployContract("SigVerifyLib", [], {});
-        await sigVerifyLib.waitForDeployment();
-        const sigVerifyLibAddr = await sigVerifyLib.getAddress();
-        console.log("sigVerifyLib address:", sigVerifyLibAddr);
-        globalDataset.sigVerifyLibAddr = sigVerifyLibAddr;
-
         const p256verify = await ethers.deployContract("P256Verifier", [], {});
         await p256verify.waitForDeployment();
         const p256verifyAddr = await p256verify.getAddress();
         console.log("p256 verify address:", p256verifyAddr);
         globalDataset.p256verifyAddr = p256verifyAddr;
+
+        const sigVerifyLib = await ethers.deployContract("SigVerifyLib", [p256verifyAddr], {});
+        await sigVerifyLib.waitForDeployment();
+        const sigVerifyLibAddr = await sigVerifyLib.getAddress();
+        console.log("sigVerifyLib address:", sigVerifyLibAddr);
+        globalDataset.sigVerifyLibAddr = sigVerifyLibAddr;
 
         const pemCertLib = await ethers.deployContract("PEMCertChainLib");
         await pemCertLib.waitForDeployment();

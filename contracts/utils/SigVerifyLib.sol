@@ -14,6 +14,11 @@ import "./BytesUtils.sol";
 
 contract SigVerifyLib is ISigVerifyLib {
     using BytesUtils for bytes;
+    address private ES256VERIFIER;
+
+    constructor(address es256Verifier) {
+        ES256VERIFIER = es256Verifier;
+    }
 
     function verifyAttStmtSignature(bytes memory tbs, bytes memory signature, PublicKey memory publicKey, Algorithm alg)
         public
@@ -106,6 +111,10 @@ contract SigVerifyLib is ISigVerifyLib {
         uint256 gy = uint256(bytes32(publicKey.substring(32, 32)));
 
         // Verify signature
-        sigValid = P256.verifySignatureAllowMalleability(sha256(tbs), r, s, gx, gy);
+        bytes memory args = abi.encode(sha256(tbs), r, s, gx, gy);
+        (bool success, bytes memory ret) = ES256VERIFIER.staticcall(args);
+        assert(success); // never reverts, always returns 0 or 1
+
+        return abi.decode(ret, (uint256)) == 1;
     }
 }
