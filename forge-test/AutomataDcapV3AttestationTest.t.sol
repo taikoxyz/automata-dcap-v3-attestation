@@ -3,8 +3,10 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
 import {AutomataDcapV3Attestation} from "../contracts/AutomataDcapV3Attestation.sol";
+import {P256Verifier} from "../contracts/lib/P256Verifier.sol";
 import {SigVerifyLib} from "../contracts/utils/SigVerifyLib.sol";
 import {PEMCertChainLib} from "../contracts/lib/PEMCertChainLib.sol";
+import {V3Struct} from "../contracts/lib/QuoteV3Auth/V3Struct.sol";
 import {BytesUtils} from "../contracts/utils/BytesUtils.sol";
 import {Base64} from "solady/src/Milady.sol";
 import "./utils/DcapTestUtils.t.sol";
@@ -14,12 +16,14 @@ contract AutomataDcapV3AttestationTest is Test, DcapTestUtils {
 
     AutomataDcapV3Attestation attestation;
     SigVerifyLib sigVerifyLib;
+    P256Verifier p256Verifier;
     PEMCertChainLib pemCertChainLib;
     // use a network that where the P256Verifier contract exists
     // ref: https://github.com/daimo-eth/p256-verifier
     string internal rpcUrl = vm.envString("RPC_URL");
     string internal constant tcbInfoPath = "contracts/assets/0923/tcbInfo.json";
     string internal constant idPath = "contracts/assets/0923/identity.json";
+    string internal constant v3QuotePath = "contracts/assets/0923/v3quote.json";
     address constant admin = address(1);
     address constant user = 0x0926b716f6aEF52F9F3C3474A2846e1Bf1ACedf6;
     bytes32 constant mrEnclave = 0x46049af725ec3986eeb788693df7bc5f14d3f2705106a19cd09b9d89237db1a0;
@@ -40,7 +44,8 @@ contract AutomataDcapV3AttestationTest is Test, DcapTestUtils {
         vm.deal(admin, 100 ether);
 
         vm.startPrank(admin);
-        sigVerifyLib = new SigVerifyLib();
+        p256Verifier = new P256Verifier();
+        sigVerifyLib = new SigVerifyLib(address(p256Verifier));
         pemCertChainLib = new PEMCertChainLib();
         attestation = new AutomataDcapV3Attestation(address(sigVerifyLib), address(pemCertChainLib));
         attestation.setMrEnclave(mrEnclave, true);
@@ -65,6 +70,17 @@ contract AutomataDcapV3AttestationTest is Test, DcapTestUtils {
     function testAttestation() public {
         vm.prank(user);
         bool verified = attestation.verifyAttestation(sampleQuote);
+        assertTrue(verified);
+    }
+
+    function testParsedQuoteAttestation() public {
+        vm.prank(user);
+        string memory v3QuoteJsonStr = vm.readFile(v3QuotePath);
+        // (bool success, V3Struct.ParsedV3QuoteStruct memory v3quote) = parseV3QuoteJson(v3QuoteJsonStr);
+        bytes memory v3QuotePacked = vm.parseJson(v3QuoteJsonStr);
+        V3Struct.ParsedV3QuoteStruct memory v3quote = abi.decode(v3QuotePacked, (V3Struct.ParsedV3QuoteStruct));
+        // require(success, "v3 quote json parsed failed");
+        (bool verified, ) = attestation.verifyParsedQuote(v3quote);
         assertTrue(verified);
     }
 

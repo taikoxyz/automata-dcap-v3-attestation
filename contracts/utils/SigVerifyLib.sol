@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.0;
 
-import "p256-verifier/P256.sol";
 import "../interfaces/ISigVerifyLib.sol";
 import "./RsaVerify.sol";
 import "./BytesUtils.sol";

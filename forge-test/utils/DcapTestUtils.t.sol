@@ -3,6 +3,7 @@ pragma solidity ^0.8.13;
 
 import {TCBInfoStruct} from "../../contracts/lib/TCBInfoStruct.sol";
 import {EnclaveIdStruct} from "../../contracts/lib/EnclaveIdStruct.sol";
+import {V3Struct} from "../../contracts/lib/QuoteV3Auth/V3Struct.sol";
 import {JSONParserLib, LibString} from "solady/src/Milady.sol";
 
 contract DcapTestUtils {
@@ -184,13 +185,13 @@ contract DcapTestUtils {
                 string memory decodedKey = JSONParserLib.decodeString(tcbObjValue[k].key());
                 if (decodedKey.eq("tcb")) {
                     JSONParserLib.Item[] memory tcb = tcbObjValue[k].children();
-                    tcbInfo.tcbLevels[j].sgxTcbCompSvnArr = new uint256[](tcbObjValue[k].size() - 1);
+                    tcbInfo.tcbLevels[j].sgxTcbCompSvnArr = new uint8[](tcbObjValue[k].size() - 1);
                     for (uint256 l = 0; l < tcbObjValue[k].size(); l++) {
                         decodedKey = JSONParserLib.decodeString(tcb[l].key());
                         if (decodedKey.eq("pcesvn")) {
                             tcbInfo.tcbLevels[j].pcesvn = JSONParserLib.parseUint(tcb[l].value());
                         } else {
-                            tcbInfo.tcbLevels[j].sgxTcbCompSvnArr[l] = JSONParserLib.parseUint(tcb[l].value());
+                            tcbInfo.tcbLevels[j].sgxTcbCompSvnArr[l] = uint8(JSONParserLib.parseUint(tcb[l].value()));
                         }
                     }
                 } else if (decodedKey.eq("tcbStatus")) {
@@ -241,5 +242,13 @@ contract DcapTestUtils {
             r[i] = bytes1(_fromHexChar(uint8(ss[2 * i])) * 16 + _fromHexChar(uint8(ss[2 * i + 1])));
         }
         return r;
+    }
+
+ function parseV3QuoteJson(string memory v3QuoteJsonStr)
+        internal
+        pure
+        returns (bool success, V3Struct.ParsedV3QuoteStruct memory v3quote)
+    {
+        success = true;
     }
 }

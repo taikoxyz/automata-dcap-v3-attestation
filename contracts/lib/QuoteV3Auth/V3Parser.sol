@@ -5,7 +5,7 @@ import {BytesUtils} from "../../utils/BytesUtils.sol";
 import {V3Struct} from "./V3Struct.sol";
 // import {PEMCertChainLib} from "../PEMCertChainLib.sol";
 
-import "hardhat/console.sol";
+// import "hardhat/console.sol";
 
 library V3Parser {
     using BytesUtils for bytes;
@@ -296,7 +296,7 @@ library V3Parser {
         authDataV3.ecdsa256BitSignature = rawAuthData.substring(0, 64);
         authDataV3.ecdsaAttestationKey = rawAuthData.substring(64, 64);
         authDataV3.rawQeReport = rawAuthData.substring(128, 384);
-        console.logBytes(authDataV3.rawQeReport);
+        // console.logBytes(authDataV3.rawQeReport);
         authDataV3.qeReportSignature = rawAuthData.substring(512, 64);
         authDataV3.qeAuthData = qeAuthData;
         authDataV3.certification = cert;

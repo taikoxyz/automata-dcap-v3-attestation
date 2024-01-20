@@ -16,7 +16,7 @@ import {BytesUtils} from "./utils/BytesUtils.sol";
 // External Libraries
 import {ISigVerifyLib} from "./interfaces/ISigVerifyLib.sol";
 
-import "hardhat/console.sol";
+// import "hardhat/console.sol";
 
 contract AutomataDcapV3Attestation is IAttestation {
     using BytesUtils for bytes;
@@ -163,8 +163,8 @@ contract AutomataDcapV3Attestation is IAttestation {
         if (!successful) {
             return (false, retData);
         }
-        console.log("signedQuoteData =");
-        console.logBytes(signedQuoteData);
+        // //console.log("signedQuoteData =");
+        //console.logBytes(signedQuoteData);
 
         // Step 2: Verify application enclave report MRENCLAVE and MRSIGNER
         {
@@ -229,8 +229,8 @@ contract AutomataDcapV3Attestation is IAttestation {
             parsedQuoteCerts = new IPEMCertChainLib.ECSha256Certificate[](3);
             for (uint256 i = 0; i < 3; i++) {
                 quoteCerts[i] = Base64.decode(string(quoteCerts[i]));
-                console.log("Step 4.%s: Parse Quote parsedQuoteCerts", i);
-                console.logBytes(quoteCerts[i]);
+                //console.log("Step 4.%s: Parse Quote parsedQuoteCerts", i);
+                //console.logBytes(quoteCerts[i]);
                 bool isPckCert = i == 0; // additional parsing for PCKCert
                 bool certDecodedSuccessfully;
                 (certDecodedSuccessfully, parsedQuoteCerts[i]) = pemCertLib
@@ -497,13 +497,13 @@ contract AutomataDcapV3Attestation is IAttestation {
                 authDataV3.qeReportSignature,
                 pckCertPubKey
             );
-            console.log("qeSigVerified = %s", qeSigVerified);
+            //console.log("qeSigVerified = %s", qeSigVerified);
             bool quoteSigVerified = sigVerifyLib.verifyES256Signature(
                 signedQuoteData,
                 authDataV3.ecdsa256BitSignature,
                 authDataV3.ecdsaAttestationKey
             );
-            console.log("quoteSigVerified = %s", quoteSigVerified);
+            //console.log("quoteSigVerified = %s", quoteSigVerified);
             return qeSigVerified && quoteSigVerified;
         } else {
             return false;
@@ -534,7 +534,7 @@ contract AutomataDcapV3Attestation is IAttestation {
         exitStep = 1;
 
         // // Step 1: Parse the quote input = 152k gas
-        console.log("Step 1: Parse the quote input = 152k gas");
+        //console.log("Step 1: Parse the quote input = 152k gas");
         // todo: validate(v3quote)
         (
             bool successful,
@@ -549,9 +549,9 @@ contract AutomataDcapV3Attestation is IAttestation {
 
         exitStep += 1;
         // Step 2: Verify application enclave report MRENCLAVE and MRSIGNER
-        console.log(
-            "Step 2: Verify application enclave report MRENCLAVE and MRSIGNER"
-        );
+        //console.log(
+        //     "Step 2: Verify application enclave report MRENCLAVE and MRSIGNER"
+        // );
         {
             if (checkLocalEnclaveReport) {
                 // 4k gas
@@ -569,7 +569,7 @@ contract AutomataDcapV3Attestation is IAttestation {
         }
 
         exitStep += 1;
-        console.log("Step 3: Verify enclave identity = 43k gas");
+        //console.log("Step 3: Verify enclave identity = 43k gas");
         // Step 3: Verify enclave identity = 43k gas
         EnclaveIdStruct.EnclaveIdStatus qeTcbStatus;
         {
@@ -595,7 +595,7 @@ contract AutomataDcapV3Attestation is IAttestation {
         }
 
         exitStep += 1;
-        console.log("Step 4: Parse Quote CertChain");
+        //console.log("Step 4: Parse Quote CertChain");
         // Step 4: Parse Quote CertChain
         IPEMCertChainLib.ECSha256Certificate[] memory parsedQuoteCerts;
         TCBInfoStruct.TCBInfo memory fetchedTcbInfo;
@@ -603,7 +603,7 @@ contract AutomataDcapV3Attestation is IAttestation {
             // 536k gas
             parsedQuoteCerts = new IPEMCertChainLib.ECSha256Certificate[](3);
             for (uint256 i = 0; i < 3; i++) {
-                console.log("Step 4.%s: Parse Quote parsedQuoteCerts", i);
+                //console.log("Step 4.%s: Parse Quote parsedQuoteCerts", i);
                 // quoteCerts[i] = Base64.decode(string(authDataV3.certification.certArray[i]));
                 bool isPckCert = i == 0; // additional parsing for PCKCert
                 bool certDecodedSuccessfully;
@@ -620,7 +620,7 @@ contract AutomataDcapV3Attestation is IAttestation {
         }
 
         exitStep += 1;
-        console.log("Step 5: basic PCK and TCB check = 381k gas");
+        //console.log("Step 5: basic PCK and TCB check = 381k gas");
         // Step 5: basic PCK and TCB check = 381k gas
         {
             string memory parsedFmspc = parsedQuoteCerts[0]
@@ -648,7 +648,7 @@ contract AutomataDcapV3Attestation is IAttestation {
         }
 
         exitStep += 1;
-        console.log("Step 6: Verify TCB Level");
+        //console.log("Step 6: Verify TCB Level");
         // Step 6: Verify TCB Level
         TCBInfoStruct.TCBStatus tcbStatus;
         {
@@ -664,7 +664,7 @@ contract AutomataDcapV3Attestation is IAttestation {
         }
 
         exitStep += 1;
-        console.log("Step 7: Verify cert chain for PCK");
+        //console.log("Step 7: Verify cert chain for PCK");
         // Step 7: Verify cert chain for PCK
         {
             // 660k gas (rootCA pubkey is trusted)
@@ -675,9 +675,9 @@ contract AutomataDcapV3Attestation is IAttestation {
         }
 
         exitStep += 1;
-        console.log(
-            "Step 8: Verify the local attestation sig and qe report sig = 670k gas"
-        );
+        // console.log(
+        //     "Step 8: Verify the local attestation sig and qe report sig = 670k gas"
+        // );
         // Step 8: Verify the local attestation sig and qe report sig = 670k gas
         {
             bool enclaveReportSigsVerified = _enclaveParsedReportSigVerification(
@@ -697,6 +697,6 @@ contract AutomataDcapV3Attestation is IAttestation {
         // );
         exitStep += 1;
         success = _attestationTcbIsValid(tcbStatus);
-        console.log("Step 9: return success = %s, tcbStatus = %s", success, uint256(tcbStatus));
+        //console.log("Step 9: return success = %s, tcbStatus = %s", success, uint256(tcbStatus));
     }
 }
