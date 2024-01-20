@@ -3,7 +3,7 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
 import {AutomataDcapV3Attestation} from "../contracts/AutomataDcapV3Attestation.sol";
-import {P256Verifier} from "../contracts/lib/P256Verifier.sol";
+import {P256Verifier} from "../lib/p256-verifier/src/P256Verifier.sol";
 import {SigVerifyLib} from "../contracts/utils/SigVerifyLib.sol";
 import {PEMCertChainLib} from "../contracts/lib/PEMCertChainLib.sol";
 import {V3Struct} from "../contracts/lib/QuoteV3Auth/V3Struct.sol";

@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "forge-std/Script.sol";
 import "../contracts/AutomataDcapV3Attestation.sol";
 import "../contracts/utils/SigVerifyLib.sol";
-import "../contracts/lib/P256Verifier.sol";
+import "../lib/p256-verifier/src/P256Verifier.sol";
 import "../contracts/lib/PEMCertChainLib.sol";
 
 contract DeployDCAPScript is Script {
