@@ -243,12 +243,4 @@ contract DcapTestUtils {
         }
         return r;
     }
-
- function parseV3QuoteJson(string memory v3QuoteJsonStr)
-        internal
-        pure
-        returns (bool success, V3Struct.ParsedV3QuoteStruct memory v3quote)
-    {
-        success = true;
-    }
 }

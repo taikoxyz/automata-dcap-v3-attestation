@@ -17,6 +17,7 @@ import {BytesUtils} from "./utils/BytesUtils.sol";
 import {ISigVerifyLib} from "./interfaces/ISigVerifyLib.sol";
 
 // import "hardhat/console.sol";
+import "forge-std/console.sol";
 
 contract AutomataDcapV3Attestation is IAttestation {
     using BytesUtils for bytes;
@@ -533,8 +534,8 @@ contract AutomataDcapV3Attestation is IAttestation {
         success = false;
         exitStep = 1;
 
-        // // Step 1: Parse the quote input = 152k gas
-        //console.log("Step 1: Parse the quote input = 152k gas");
+        // Step 1: Parse the quote input = 152k gas
+        console.log("Step 1: Parse the quote input = 152k gas");
         // todo: validate(v3quote)
         (
             bool successful,
@@ -549,9 +550,9 @@ contract AutomataDcapV3Attestation is IAttestation {
 
         exitStep += 1;
         // Step 2: Verify application enclave report MRENCLAVE and MRSIGNER
-        //console.log(
-        //     "Step 2: Verify application enclave report MRENCLAVE and MRSIGNER"
-        // );
+        console.log(
+            "Step 2: Verify application enclave report MRENCLAVE and MRSIGNER"
+        );
         {
             if (checkLocalEnclaveReport) {
                 // 4k gas
@@ -569,7 +570,7 @@ contract AutomataDcapV3Attestation is IAttestation {
         }
 
         exitStep += 1;
-        //console.log("Step 3: Verify enclave identity = 43k gas");
+        console.log("Step 3: Verify enclave identity = 43k gas");
         // Step 3: Verify enclave identity = 43k gas
         EnclaveIdStruct.EnclaveIdStatus qeTcbStatus;
         {
@@ -595,7 +596,7 @@ contract AutomataDcapV3Attestation is IAttestation {
         }
 
         exitStep += 1;
-        //console.log("Step 4: Parse Quote CertChain");
+        console.log("Step 4: Parse Quote CertChain");
         // Step 4: Parse Quote CertChain
         IPEMCertChainLib.ECSha256Certificate[] memory parsedQuoteCerts;
         TCBInfoStruct.TCBInfo memory fetchedTcbInfo;
@@ -620,7 +621,7 @@ contract AutomataDcapV3Attestation is IAttestation {
         }
 
         exitStep += 1;
-        //console.log("Step 5: basic PCK and TCB check = 381k gas");
+        console.log("Step 5: basic PCK and TCB check = 381k gas");
         // Step 5: basic PCK and TCB check = 381k gas
         {
             string memory parsedFmspc = parsedQuoteCerts[0]
@@ -648,7 +649,7 @@ contract AutomataDcapV3Attestation is IAttestation {
         }
 
         exitStep += 1;
-        //console.log("Step 6: Verify TCB Level");
+        console.log("Step 6: Verify TCB Level");
         // Step 6: Verify TCB Level
         TCBInfoStruct.TCBStatus tcbStatus;
         {
@@ -664,7 +665,7 @@ contract AutomataDcapV3Attestation is IAttestation {
         }
 
         exitStep += 1;
-        //console.log("Step 7: Verify cert chain for PCK");
+        console.log("Step 7: Verify cert chain for PCK");
         // Step 7: Verify cert chain for PCK
         {
             // 660k gas (rootCA pubkey is trusted)
@@ -675,9 +676,9 @@ contract AutomataDcapV3Attestation is IAttestation {
         }
 
         exitStep += 1;
-        // console.log(
-        //     "Step 8: Verify the local attestation sig and qe report sig = 670k gas"
-        // );
+        console.log(
+            "Step 8: Verify the local attestation sig and qe report sig = 670k gas"
+        );
         // Step 8: Verify the local attestation sig and qe report sig = 670k gas
         {
             bool enclaveReportSigsVerified = _enclaveParsedReportSigVerification(
@@ -697,6 +698,6 @@ contract AutomataDcapV3Attestation is IAttestation {
         // );
         exitStep += 1;
         success = _attestationTcbIsValid(tcbStatus);
-        //console.log("Step 9: return success = %s, tcbStatus = %s", success, uint256(tcbStatus));
+        console.log("Step 9: return success = %s, tcbStatus = %s", success, uint256(tcbStatus));
     }
 }
