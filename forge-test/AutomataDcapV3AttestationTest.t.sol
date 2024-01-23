@@ -97,16 +97,15 @@ contract AutomataDcapV3AttestationTest is Test, DcapTestUtils, V3JsonUtils {
         (, V3Struct.ParsedV3QuoteStruct memory v3quote) = parseV3QuoteJson(
             v3QuotePacked
         );
-        // (bool verified, ) = attestation.verifyParsedQuote(v3quote);
         console.log(
             "v3quote.header.userData = %s",
             address(v3quote.header.userData)
         );
         console.logBytes(v3quote.localEnclaveReport.reportData);
+        (bool verified, ) = attestation.verifyParsedQuote(v3quote);
 
         // assertTrue(verified);
-        // console.log("[LOG] verified: %s", verified);
-        // console.log("[LOG] v3quote: %s", v3quote);
+        console.log("[LOG] verified: %s", verified);
     }
 
     function testCRL() public {
@@ -143,11 +142,11 @@ contract AutomataDcapV3AttestationTest is Test, DcapTestUtils, V3JsonUtils {
         bytes miscSelect;
         bytes32 mrEnclave;
         bytes32 mrSigner;
-        bytes reportData; // 64 bytes - For QEReports, this contains the hash of the concatenation of attestation key and QEAuthData
+        bytes reportData;
         bytes reserved1;
         bytes32 reserved2;
-        bytes reserved3; // 96 bytes
-        bytes reserved4; // 60 bytes
+        bytes reserved3;
+        bytes reserved4;
     }
 
     function testComplexJson() public {

@@ -498,13 +498,16 @@ contract AutomataDcapV3Attestation is IAttestation {
                 authDataV3.qeReportSignature,
                 pckCertPubKey
             );
-            //console.log("qeSigVerified = %s", qeSigVerified);
+            // console.log("qeSigVerified = %s", qeSigVerified);
             bool quoteSigVerified = sigVerifyLib.verifyES256Signature(
                 signedQuoteData,
                 authDataV3.ecdsa256BitSignature,
                 authDataV3.ecdsaAttestationKey
             );
-            //console.log("quoteSigVerified = %s", quoteSigVerified);
+            // console.log("quoteSigVerified = %s", quoteSigVerified);
+            // console.logBytes(signedQuoteData);
+            // console.logBytes(authDataV3.ecdsa256BitSignature);
+            // console.logBytes(authDataV3.ecdsaAttestationKey);
             return qeSigVerified && quoteSigVerified;
         } else {
             return false;
@@ -679,7 +682,7 @@ contract AutomataDcapV3Attestation is IAttestation {
         console.log(
             "Step 8: Verify the local attestation sig and qe report sig = 670k gas"
         );
-        // Step 8: Verify the local attestation sig and qe report sig = 670k gas
+        // Step 8: Verify the local attestation sig and qe report sig
         {
             bool enclaveReportSigsVerified = _enclaveParsedReportSigVerification(
                     parsedQuoteCerts[0].pubKey,

@@ -12,10 +12,10 @@ contract V3JsonUtils {
     // because the foundry Json decoder will decode the json string in alphabetical order
     struct HeaderHelper {
         bytes attestationKeyType;
-        bytes teeType;
         bytes pceSvn;
         bytes qeSvn;
         bytes qeVendorId;
+        bytes teeType;
         address userData;
         bytes version;
     }
