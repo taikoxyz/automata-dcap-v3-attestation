@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import {LibString} from "solady/src/Milady.sol";
+import {LibString} from "../../lib/solady/src/Milady.sol";
 import {Asn1Decode, NodePtr} from "../../contracts/utils/Asn1Decode.sol";
 import {BytesUtils} from "../../contracts/utils/BytesUtils.sol";
 import {X509DateUtils} from "../../contracts/utils/X509DateUtils.sol";

@@ -10,7 +10,7 @@ import {SigVerifyLib} from "../contracts/utils/SigVerifyLib.sol";
 import {PEMCertChainLib} from "../contracts/lib/PEMCertChainLib.sol";
 import {V3Struct} from "../contracts/lib/QuoteV3Auth/V3Struct.sol";
 import {BytesUtils} from "../contracts/utils/BytesUtils.sol";
-import {Base64} from "solady/src/Milady.sol";
+import {Base64} from "../lib/solady/src/Milady.sol";
 import "./utils/DcapTestUtils.t.sol";
 import "./utils/V3JsonUtils.t.sol";
 

@@ -6,10 +6,6 @@ script = 'forge-script'
 test = 'forge-test'
 cache_path  = 'cache_forge'
 fs_permissions = [{ access = "read", path = "./"}]
-remappings = [
-    "solady/=lib/solady/",
-    "p256-verifier/=lib/p256-verifier/src/"
-]
 solc = "0.8.21"
 optimizer = true
 optimizer_runs = 1000
