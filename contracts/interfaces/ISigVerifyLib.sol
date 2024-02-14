@@ -33,11 +33,13 @@ interface ISigVerifyLib {
         RS1
     }
 
+    // Verifies the signature of an attestation statement (tbs) using a given public key and algorithm.
     function verifyAttStmtSignature(bytes memory tbs, bytes memory signature, PublicKey memory publicKey, Algorithm alg)
         external
         view
         returns (bool);
 
+    // Verifies the signature of a certificate (tbs) using a given public key and certificate signature algorithm.
     function verifyCertificateSignature(
         bytes memory tbs,
         bytes memory signature,
@@ -45,16 +47,18 @@ interface ISigVerifyLib {
         CertSigAlgorithm alg
     ) external view returns (bool);
 
+    // Verifies the RS256 signature of a message using a given public key.
     function verifyRS256Signature(bytes memory tbs, bytes memory signature, bytes memory publicKey)
         external
         view
         returns (bool sigValid);
 
+   // Verifies the RS1 signature of a message using a given public key.
     function verifyRS1Signature(bytes memory tbs, bytes memory signature, bytes memory publicKey)
         external
         view
         returns (bool sigValid);
-
+    // Verifies the ES256 signature of a message using a given public key.
     function verifyES256Signature(bytes memory tbs, bytes memory signature, bytes memory publicKey)
         external
         pure
