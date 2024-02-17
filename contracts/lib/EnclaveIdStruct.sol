@@ -3,22 +3,18 @@ pragma solidity ^0.8.0;
 
 library EnclaveIdStruct {
     struct EnclaveId {
-        bytes4 miscselect;
-        bytes4 miscselectMask;
+        uint8 miscselect;
+        uint8 miscselectMask;
         uint16 isvprodid;
         bytes16 attributes;
         bytes16 attributesMask;
         bytes32 mrsigner;
-        TcbLevel[] tcbLevels;
+        TcbLevel[5] tcbLevels;
     }
 
     struct TcbLevel {
-        TcbObj tcb;
-        EnclaveIdStatus tcbStatus;
-    }
-
-    struct TcbObj {
         uint16 isvsvn;
+        EnclaveIdStatus tcbStatus;
     }
 
     enum EnclaveIdStatus {
